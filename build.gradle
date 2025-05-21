@@ -1,0 +1,42 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.0.21'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.21' // 👈 necesario
+    id 'application'
+}
+
+group = 'org.iesharia'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    // Ktor básico
+    implementation("io.ktor:ktor-server-core:2.3.4")
+    implementation("io.ktor:ktor-server-netty:2.3.4")
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.4")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.4")
+
+    // Exposed + PostgreSQL (opcional)
+    implementation("org.jetbrains.exposed:exposed-core:0.45.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.45.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.45.0")
+    implementation("org.postgresql:postgresql:42.6.0")
+    implementation "ch.qos.logback:logback-classic:1.4.11"
+    implementation("io.ktor:ktor-server-config-yaml:2.3.4")
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClassName = "org.iesharia.habitos_server.Application"
+}
+
+kotlin {
+    jvmToolchain(21)
+}
