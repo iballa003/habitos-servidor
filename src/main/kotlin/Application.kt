@@ -71,23 +71,27 @@ fun Application.module() {
         post("/register") {
             val nuevoUsuario = call.receive<RegisterRequest>()
 
-            val passwordHash = BCrypt.withDefaults().hashToString(12, nuevoUsuario.password.toCharArray())
-            val existe = transaction {
-                Usuarios.select { (Usuarios.email eq nuevoUsuario.email) }
-            }.any()
+            val passwordHash = BCrypt.withDefaults()
+                .hashToString(12, nuevoUsuario.password.toCharArray())
 
-            if (existe){
-                call.respond(HttpStatusCode.Conflict, "El email ya está registrado")
-            }else{
+            val existe = transaction {
+                Usuarios.select { Usuarios.email eq nuevoUsuario.email }.any()
+            }
+
+            if (existe) {
+                println("emaiill")
+                call.respondText("El email ya está registrado", status = HttpStatusCode.Conflict)
+            } else {
                 transaction {
                     Usuarios.insert {
                         it[nombre] = nuevoUsuario.nombre
                         it[email] = nuevoUsuario.email
-                        it[password] = nuevoUsuario.password
+                        it[password] = passwordHash
                         it[creadoEn] = LocalDateTime.now()
                     }
                 }
-                call.respond(HttpStatusCode.Created, "Usuario registrado correctamente")
+                println("Registro completado. Enviando respuesta...")
+                call.respondText("Usuario registrado correctamente", status = HttpStatusCode.Created)
             }
         }
         get("/categorias") {
