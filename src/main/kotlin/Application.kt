@@ -18,6 +18,9 @@ import io.ktor.server.request.*
 import org.iesharia.model.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import at.favre.lib.crypto.bcrypt.BCrypt
+import org.jetbrains.exposed.sql.insert
+import java.time.LocalDateTime
 
 fun main() {
     embeddedServer(Netty, environment = applicationEngineEnvironment {
@@ -48,13 +51,43 @@ fun Application.module() {
             val login = call.receive<LoginRequest>()
             val usuario = transaction {
                 Usuarios.select {
-                    (Usuarios.email eq login.email) and (Usuarios.password eq login.password)
+                    (Usuarios.email eq login.email)
                 }.singleOrNull()
             }
             if (usuario != null){
-                call.respond(LoginResponse(true, usuario[Usuarios.id], "Login Correcto"))
+                val hashFromDb = usuario[Usuarios.password]
+
+                val result = BCrypt.verifyer().verify(login.password.toCharArray(), hashFromDb)
+                if(result.verified){
+                    call.respond(LoginResponse(true, usuario[Usuarios.id], "Login Correcto"))
+                }else{
+                    call.respond(HttpStatusCode.Unauthorized, LoginResponse(false,null,"Contraseña incorrecta"))
+                }
+
             }else{
-                call.respond(HttpStatusCode.Unauthorized, LoginResponse(false,null,"Credenciales inválidas"))
+                call.respond(HttpStatusCode.Unauthorized, LoginResponse(false,null,"Usuario incorrecto"))
+            }
+        }
+        post("/register") {
+            val nuevoUsuario = call.receive<RegisterRequest>()
+
+            val passwordHash = BCrypt.withDefaults().hashToString(12, nuevoUsuario.password.toCharArray())
+            val existe = transaction {
+                Usuarios.select { (Usuarios.email eq nuevoUsuario.email) }
+            }.any()
+
+            if (existe){
+                call.respond(HttpStatusCode.Conflict, "El email ya está registrado")
+            }else{
+                transaction {
+                    Usuarios.insert {
+                        it[nombre] = nuevoUsuario.nombre
+                        it[email] = nuevoUsuario.email
+                        it[password] = nuevoUsuario.password
+                        it[creadoEn] = LocalDateTime.now()
+                    }
+                }
+                call.respond(HttpStatusCode.Created, "Usuario registrado correctamente")
             }
         }
         get("/categorias") {
