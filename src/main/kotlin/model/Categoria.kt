@@ -1,4 +1,4 @@
-package org.iesharia
+package org.iesharia.model
 
 
 import kotlinx.serialization.Serializable

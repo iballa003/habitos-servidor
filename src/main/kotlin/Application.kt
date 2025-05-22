@@ -9,16 +9,20 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.respond
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.iesharia.model.Categorias
 import org.iesharia.database.DatabaseFactory
 import org.jetbrains.exposed.sql.selectAll
 import com.typesafe.config.ConfigFactory
+import io.ktor.http.*
 import io.ktor.server.config.HoconApplicationConfig
+import io.ktor.server.request.*
+import org.iesharia.model.*
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
 
 fun main() {
     embeddedServer(Netty, environment = applicationEngineEnvironment {
         config = HoconApplicationConfig(ConfigFactory.load("application.conf"))
-        module(Application::module) // 👈 ESTE YA ejecuta todo lo de Application.module()
+        module(Application::module)
         connector {
             port = 8080
             host = "0.0.0.0"
@@ -38,7 +42,20 @@ fun Application.module() {
 
     routing {
         get("/") {
-            call.respondText("Servidor Ktor funcionando 🚀")
+            call.respondText("Ktor funcionando")
+        }
+        post("/login") {
+            val login = call.receive<LoginRequest>()
+            val usuario = transaction {
+                Usuarios.select {
+                    (Usuarios.email eq login.email) and (Usuarios.password eq login.password)
+                }.singleOrNull()
+            }
+            if (usuario != null){
+                call.respond(LoginResponse(true, usuario[Usuarios.id], "Login Correcto"))
+            }else{
+                call.respond(HttpStatusCode.Unauthorized, LoginResponse(false,null,"Credenciales inválidas"))
+            }
         }
         get("/categorias") {
             val categorias = transaction {
