@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.iesharia.model.Categorias
+import org.iesharia.model.Habitos
 
 object DatabaseFactory {
 
@@ -24,7 +25,7 @@ object DatabaseFactory {
         )
 
         transaction(db) {
-            SchemaUtils.create(Categorias)
+            SchemaUtils.create(Categorias, Habitos)
         }
     }
 }

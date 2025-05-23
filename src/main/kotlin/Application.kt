@@ -94,6 +94,29 @@ fun Application.module() {
                 call.respondText("Usuario registrado correctamente", status = HttpStatusCode.Created)
             }
         }
+        get("/habitos") {
+            val userId = call.request.queryParameters["usuarioId"]?.toIntOrNull()
+            if (userId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Falta usuarioId")
+                return@get
+            }
+
+            val habitos = transaction {
+                Habitos.select { Habitos.usuarioId eq userId }.map {
+                    Habito(
+                        id = it[Habitos.id],
+                        nombre = it[Habitos.nombre],
+                        descripcion = it[Habitos.descripcion],
+                        meta = it[Habitos.metaDiaria],
+                        estado = it[Habitos.estado],
+                        categoriaId = it[Habitos.categoriaId]
+                    )
+                }
+            }
+
+            call.respond(habitos)
+        }
+
         get("/categorias") {
             val categorias = transaction {
                 Categorias.selectAll().map {
